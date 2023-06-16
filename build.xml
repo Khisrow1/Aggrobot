@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="export_jar" name="Aggrobot">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
+    <path id="Aggrobot.classpath">
+        <pathelement location="lib/microrts.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-project" name="build"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="Aggrobot.classpath"/>
+        </javac>
+    </target>
+	<target name="export_jar" depends="cleanall,build-project">
+		<mkdir dir="build" />
+		<jar destfile="build/Aggrobot.jar" basedir="bin" duplicate="preserve">
+			<zipgroupfileset dir="./lib/" includes="**/*.jar" />
+			<manifest>
+				<attribute name="Main-Class" value="test.GameVisualSimulationTest" />
+			</manifest>
+		</jar>
+	</target>
+</project>
