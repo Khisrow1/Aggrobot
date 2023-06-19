@@ -2,12 +2,13 @@ package test;
 
 import ai.core.AI;
 import ai.*;
-import ai.abstraction.LightRush;
+import ai.abstraction.*;
 import ai.abstraction.pathfinding.BFSPathFinding;
 import gui.PhysicalGameStatePanel;
-import abid.Aggrobot;
 
 import javax.swing.JFrame;
+
+import abid.Aggrobot;
 import rts.GameState;
 import rts.PhysicalGameState;
 import rts.PlayerAction;
@@ -20,7 +21,14 @@ import rts.units.UnitTypeTable;
 public class GameVisualSimulationTest {
     public static void main(String[] args) throws Exception {
         UnitTypeTable utt = new UnitTypeTable();
-        PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);
+
+        // PhysicalGameState pgs = PhysicalGameState.load("maps/8x8/basesWorkers8x8.xml", utt);
+        // PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);
+        // PhysicalGameState pgs = PhysicalGameState.load("maps/24x24/basesWorkers24x24.xml", utt);
+        PhysicalGameState pgs = PhysicalGameState.load("maps/chambers32x32.xml", utt);
+        // PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
+
+
 //        PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
 
         GameState gs = new GameState(pgs, utt);
@@ -29,10 +37,13 @@ public class GameVisualSimulationTest {
         boolean gameover = false;
         
         // AI ai1 = new WorkerRush(utt, new BFSPathFinding());        
-
         AI ai1 = new Aggrobot(utt);
-        AI ai2 = new PassiveAI(utt);
-        // AI ai2 = new RandomBiasedAI();
+        // AI ai1 = new mayari(utt);
+        // AI ai2 = new WorkerRush(utt);
+        // AI ai2 = new LightRush(utt);
+        // AI ai2 = new RangedRush(utt);
+        AI ai2 = new HeavyRush(utt);
+
 
         JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_BLACK);
 //        JFrame w = PhysicalGameStatePanel.newVisualizer(gs,640,640,false,PhysicalGameStatePanel.COLORSCHEME_WHITE);
