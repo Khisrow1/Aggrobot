@@ -24,8 +24,8 @@ public class GameVisualSimulationTest {
 
         // PhysicalGameState pgs = PhysicalGameState.load("maps/8x8/basesWorkers8x8.xml", utt);
         // PhysicalGameState pgs = PhysicalGameState.load("maps/16x16/basesWorkers16x16.xml", utt);
-        // PhysicalGameState pgs = PhysicalGameState.load("maps/24x24/basesWorkers24x24.xml", utt);
-        PhysicalGameState pgs = PhysicalGameState.load("maps/chambers32x32.xml", utt);
+        PhysicalGameState pgs = PhysicalGameState.load("maps/24x24/basesWorkers24x24.xml", utt);
+        // PhysicalGameState pgs = PhysicalGameState.load("maps/chambers32x32.xml", utt);
         // PhysicalGameState pgs = MapGenerator.basesWorkers8x8Obstacle();
 
 
@@ -37,11 +37,12 @@ public class GameVisualSimulationTest {
         boolean gameover = false;
         
         // AI ai1 = new WorkerRush(utt, new BFSPathFinding());        
+        // AI ai1 = new Aggrobot(utt);
         AI ai1 = new Aggrobot(utt);
-        // AI ai1 = new mayari(utt);
+        // AI ai2 = new Aggrobot(utt);
         // AI ai2 = new WorkerRush(utt);
         // AI ai2 = new LightRush(utt);
-        // AI ai2 = new RangedRush(utt);
+        // AI ai1 = new RangedRush(utt);
         AI ai2 = new HeavyRush(utt);
 
 

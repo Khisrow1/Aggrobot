@@ -17,7 +17,7 @@ import rts.units.Unit;
 import rts.units.UnitType;
 import rts.units.UnitTypeTable;
 
-public class Aggrobot extends AbstractionLayerAI{
+public class AggrobotExperiment extends AbstractionLayerAI{
 
 
     public class Vector2D
@@ -261,8 +261,8 @@ public class Aggrobot extends AbstractionLayerAI{
             int xAlternate = 1;
             int yAlternate = 1;
 
-            xAllowed = 2;
-            yAllowed = 2;
+            xAllowed = 3;
+            yAllowed = 3;
 
             int prevDistanceToEnemy = gs.getPhysicalGameState().getHeight() + gs.getPhysicalGameState().getWidth();
             Vector2D selectedPos = new Vector2D(0, 0);;
@@ -330,7 +330,7 @@ public class Aggrobot extends AbstractionLayerAI{
         {
             Unit leader = this.units.get(0);
 
-            return Aggrobot.this.getUniClosestEnemy(leader, physicalGS, player);
+            return AggrobotExperiment.this.getUniClosestEnemy(leader, physicalGS, player);
         }
 
         public UnitDesc getClosestFightingAlly(PhysicalGameState physicalGS, Player player)
@@ -397,6 +397,47 @@ public class Aggrobot extends AbstractionLayerAI{
                     idx--;
                 }
             }
+
+            // for (Unit unit : units)
+            // {
+            //     if(gs.getActionAssignment(unit) == null)
+            //     {
+            //         switch (action) {
+            //             case "wait":
+            //                 idle(unit);
+            //                 break;
+            //             case "move":
+            //                 // ClusterCloser(gs, Cluster, maxDistance);
+            //                 // if (!(getAbstractAction(unit) instanceof ai.abstraction.Move))
+            //                 // {
+            //                 moveToVicinity(gs, unit, posX, posY);
+            //                 // }
+            //                 break;
+            //             case "harvest":
+            //                 assert(source != null && target != null);
+            //                 harvest(unit, source, target);
+            //                 break;
+            //             case "return":
+            //                 assert(source != null && target != null);
+            //                 harvest(unit, source, target);
+            //                 break;
+            //             case "produce":
+            //                 assert(makeType!= null);
+            //                 train(unit, makeType);
+            //                 break;
+            //             case "attack":
+            //                 assert(target!= null);
+            //                 if(target.getHitPoints() == 0)
+            //                 {
+            //                     target = getClosestEnemy(gs.getPhysicalGameState(), player).unit;
+            //                 }
+            //                 attack(unit, target);
+            //                 break;
+            //             default:
+            //                 break;
+            //         }
+            //     }
+            // }
         }
     }
 
@@ -426,20 +467,20 @@ public class Aggrobot extends AbstractionLayerAI{
 
     int maxBarracksNum = 2;
 
-    int idlePosition = 0;
-
     Cluster pawnCluster = new Cluster();
     Cluster homeCluster = new Cluster();
+
+    Vector2D idlePosition = new Vector2D();
 
     boolean canInitStrategize;
     boolean initialWaitForEnemy;
 
-    public Aggrobot(UnitTypeTable utt)
+    public AggrobotExperiment(UnitTypeTable utt)
     {
         this(utt, new AStarPathFinding());
     }
 
-    public Aggrobot(UnitTypeTable utt, PathFinding pf)
+    public AggrobotExperiment(UnitTypeTable utt, PathFinding pf)
     {
         super(pf);
         reset(utt);
@@ -447,7 +488,7 @@ public class Aggrobot extends AbstractionLayerAI{
 
     @Override
     public AI clone() {
-        return new Aggrobot(m_utt, pf);
+        return new AggrobotExperiment(m_utt, pf);
     }
 
     @Override
@@ -512,7 +553,6 @@ public class Aggrobot extends AbstractionLayerAI{
                 }
                 else if(unit.getType() == barracksType) ++numAllyBarracks;
             }
-            else if (unit.getPlayer() < 0) {}
             else {
                 // Enemy units
                 if(unit.getType() == workerType)      ++numEnemyWorkers;
@@ -544,8 +584,10 @@ public class Aggrobot extends AbstractionLayerAI{
         {
             initialWaitForEnemy = true;
             Unit candidateUnit = null;
-            Unit initialEnemy = null;
+
             // Priority would be light units if present, otherwise workers.
+            // Getting the distance between farthest ally and closest enemy
+            Unit initialCloseEnemy = null;
             UnitType priorityEnemyType = workerType;
             int enemyDist = physicalGS.getHeight() + physicalGS.getWidth();
             for(Unit unit : physicalGS.getUnits()) {
@@ -555,19 +597,16 @@ public class Aggrobot extends AbstractionLayerAI{
                     if(unit.getType().canAttack)
                     {
                         for(Unit unit2 : physicalGS.getUnits()) {
-                            if(unit2.getPlayer() >= 0 && unit2.getPlayer() != player.getID())
+                            if(unit2.getPlayer() >= 0 && unit2.getPlayer() != player.getID())//  && unit2.getType().canAttack)
                             {
-                                initialEnemy = unit2;
-                                if(unit2.getType().canAttack)
+                                int tempDist = manhattanDist(unit.getX(), unit.getY(), unit2.getX(), unit2.getY());
+                                if(initialCloseEnemy == null && tempDist < enemyDist) {
+                                    enemyDist = tempDist;
+                                    initialCloseEnemy = unit2;
+                                }
+                                if(unit2.getType() == lightType)
                                 {
-                                    int tempDist = manhattanDist(unit.getX(), unit.getY(), unit2.getX(), unit2.getY());
-                                    if(tempDist < enemyDist) {
-                                        enemyDist = tempDist;
-                                    }
-                                    if(unit2.getType() == lightType)
-                                    {
-                                        priorityEnemyType = lightType;
-                                    }
+                                    priorityEnemyType = lightType;
                                 }
                             }
                         }
@@ -578,6 +617,7 @@ public class Aggrobot extends AbstractionLayerAI{
             int closestDistance = 0;
             Unit closestRes = null;
 
+            // Getting the closest resource to the ally unit
             if(candidateUnit != null)
             {
                 for (Unit unit : physicalGS.getUnits())
@@ -594,19 +634,17 @@ public class Aggrobot extends AbstractionLayerAI{
                 }
             }
 
-            // Do we have time to strategize by the time the fastest units of enemy gets here?
-            // Fastest determined by what type of units they have. They could have light or
-            int timeToBuildLightUnit = ((numAllyBarracks == 0) ? barracksType.produceTime : 0) + lightType.produceTime;
-
             // Time needed for the light units to move some steps in case we do not have enough resources
             int paddingTime  = lightType.moveTime*2;
+
+            // Calculate padding time in case we do not have enough resources for building barracks
+            int closestResDist = 0;
             if(player.getResources() < barracksType.cost+lightType.cost)
             {
                 if(numAllyWorkers > 0)
                 {
                     Unit leader = workers.get(0);
 
-                    int closestResDist = 0;
                     Unit closestResUnit = null;
 
                     for (Unit unit : physicalGS.getUnits()) {
@@ -624,8 +662,14 @@ public class Aggrobot extends AbstractionLayerAI{
                 else { paddingTime += baseType.cost + 2*workerType.cost; }
             }
 
+            // Do we have time to strategize by the time the fastest units of enemy gets here?
+            // Fastest determined by what type of units they have. They could have light or workers
+            int timeToBuildLightUnit = ((numAllyBarracks == 0) ? barracksType.produceTime +
+                                                                  -1*Math.min(player.getResources()-barracksType.cost, 0)*2*workerType.moveTime*closestResDist/numAllyWorkers : 0) +
+                                        lightType.produceTime;
+
             // If enemy will reach us before we can prepare, then we swarm them initially.
-            if(timeToBuildLightUnit + paddingTime > enemyDist*priorityEnemyType.moveTime) {
+            if(timeToBuildLightUnit + paddingTime + workerType.moveTime*8> enemyDist*priorityEnemyType.moveTime) {
                 canInitStrategize = false;
                 // Do we have time to make a second home cluster member
                 if (workerType.produceTime*4 < enemyDist*priorityEnemyType.moveTime) {
@@ -637,22 +681,24 @@ public class Aggrobot extends AbstractionLayerAI{
                 // In case we are strategizing, it is always better to have 2 home cluster member
                 canInitStrategize = true;
                 maxNumHome = 2;
-                // if(closestRes.getResources() < 6*lightType.cost) maxNumHome = 2;
             }
-
 
             // Code to wait for another unit to come and then go with it.
-            int timeToGatherRes = (player.getResources() >= lightType.cost) ? lightType.cost : lightType.cost+workerType.moveTime*6; // 6 is magic number here
-            int dLight = (enemyDist*priorityEnemyType.moveTime - timeToBuildLightUnit - paddingTime - timeToGatherRes) / (4*lightType.moveTime);
-            if(initialBase != null && initialEnemy != null) 
+            // int timeToGatherRes = (player.getResources() >= lightType.cost) ? lightType.cost : lightType.cost+workerType.moveTime*6; // 6 is magic number here
+            float dLight = (enemyDist*priorityEnemyType.moveTime - timeToBuildLightUnit - paddingTime) / (3*lightType.moveTime);
+            dLight = Math.max(3, dLight);
+            if(initialBase != null && initialCloseEnemy != null)
             {
-                idlePosition = initialBase.getX() + initialBase.getY() + dLight;
-                if(initialBase.getX() + initialBase.getY() > initialEnemy.getX() + initialEnemy.getY())
-                {
-                    idlePosition = (initialBase.getX()) - (physicalGS.getHeight() - initialBase.getY()) - dLight;
-                }
+                float xDir = initialCloseEnemy.getX() - initialBase.getX(); // positive -> direction = right. negative -> direction = left
+                float yDir = initialCloseEnemy.getY() - initialBase.getY(); // positive -> direction = down. negative -> direction = up
+                idlePosition.x = initialBase.getX() + Math.signum(xDir)*dLight;
+                idlePosition.y = initialBase.getY() + Math.signum(yDir)*dLight;
             }
-            else idlePosition = Math.min(physicalGS.getHeight(), physicalGS.getWidth())/4;
+            else
+            {
+                idlePosition.x = Math.min(physicalGS.getHeight(), physicalGS.getWidth()) / 4;
+                idlePosition.y = Math.min(physicalGS.getHeight(), physicalGS.getWidth()) / 4;
+            }
         }
 
         // See if we can strategize now, then let's do that
@@ -696,7 +742,7 @@ public class Aggrobot extends AbstractionLayerAI{
         basesUpdate(gameState, player, canInitStrategize);
 
         // Light
-        updateLightUnits(gameState, player, idlePosition, 3);
+        updateLightUnits(gameState, player, idlePosition, Math.max(physicalGS.getHeight(), physicalGS.getWidth())/4, 3, 2);
 
         // Ranged
         updateRangedUnits(gameState, player);
@@ -919,7 +965,7 @@ public class Aggrobot extends AbstractionLayerAI{
         }
     }
     
-    public void updateLightUnits(GameState gameState, Player player, int idleDest, int attackDistance)
+    public void updateLightUnits(GameState gameState, Player player, Vector2D idleDest, int attackDistance, int allyThreshold, int allyNumber)
     {
         PhysicalGameState physicalGS = gameState.getPhysicalGameState();
 
@@ -950,8 +996,27 @@ public class Aggrobot extends AbstractionLayerAI{
                 UnitDesc closestEnemy = getUniClosestEnemy(unit, physicalGS, player);
                 if(initialWaitForEnemy && closestEnemy.distVec.x + closestEnemy.distVec.y > attackDistance)
                 {
-                    Vector2D avilPos = getAvailPosInVicinity(gameState, player, idleDest, idleDest);
-                    move(unit, (int)avilPos.x, (int)avilPos.y);
+                    int fightersWithinThreshold = 0;
+                    for (Unit unit2 : physicalGS.getUnits())
+                    {
+                        if(unit2.getPlayer() == player.getID() && unit2.getType() != workerType && unit2.getType().canAttack)
+                        {
+                            int dist = manhattanDist(unit.getX(), unit.getY(), unit2.getX(), unit2.getY());
+                            if(dist <= allyThreshold)
+                            {
+                                fightersWithinThreshold++;
+                            }
+                        }
+                    }
+
+                    if(fightersWithinThreshold >= allyThreshold) {
+                        attack(unit, closestEnemy.unit);
+                        initialWaitForEnemy = false;
+                    }
+                    else {
+                        Vector2D avilPos = getAvailPosInVicinity(gameState, player, (int) idleDest.x, (int) idleDest.y);
+                        move(unit, (int) avilPos.x, (int) avilPos.y);
+                    }
                 }
                 else {
                     attack(unit, closestEnemy.unit);
@@ -1166,8 +1231,10 @@ public class Aggrobot extends AbstractionLayerAI{
         numEnemyLight = 0;
         numEnemyHeavy = 0;
         numEnemyRanged = 0;
+
         initialWaitForEnemy = true;
-        idlePosition = 0;
+        idlePosition.x = 0;
+        idlePosition.y = 0;
     }
 
 }
