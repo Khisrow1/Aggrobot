@@ -1,2 +1,2 @@
 # Aggrobot AI Competition Bot
-**2nd place winner** of 2023 microRTS AI competition using A*
+AI bot made for microRTS international competition. Aggrobot won **2nd place** of 2023 microRTS AI competition in all maps.
